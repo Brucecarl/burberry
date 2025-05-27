@@ -4,7 +4,7 @@ use alloy::{
     providers::Provider,
 };
 use async_trait::async_trait;
-use eyre::Result;
+use anyhow::Result;
 use std::sync::Arc;
 
 use crate::types::Executor;

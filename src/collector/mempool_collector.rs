@@ -4,15 +4,15 @@ use crate::types::{Collector, CollectorStream};
 use alloy::transports::{RpcError, TransportErrorKind};
 use alloy::{primitives::B256, providers::Provider, rpc::types::eth::Transaction};
 use async_trait::async_trait;
-use eyre::WrapErr;
 use futures::prelude::{stream::FuturesUnordered, Stream};
 use futures::{FutureExt, StreamExt};
 use std::future::Future;
 use std::{
     collections::VecDeque,
     pin::Pin,
-    task::{Context, Poll},
+    task::{Context as TaskContext, Poll},
 };
+use anyhow::Context;
 use tracing::error;
 
 pub struct MempoolCollector {
@@ -31,12 +31,12 @@ impl Collector<Transaction> for MempoolCollector {
         "MempoolCollector"
     }
 
-    async fn get_event_stream(&self) -> eyre::Result<CollectorStream<'_, Transaction>> {
+    async fn get_event_stream(&self) -> anyhow::Result<CollectorStream<'_, Transaction>> {
         let stream = self
             .provider
             .subscribe_pending_transactions()
             .await
-            .wrap_err("fail to subscribe to pending transaction stream")?
+            .with_context(||"fail to subscribe to pending transaction stream")?
             .into_stream();
 
         let stream = TransactionStream::new(self.provider.as_ref(), stream, 256);
@@ -112,7 +112,7 @@ where
 {
     type Item = TransactionResult;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, cx: &mut TaskContext<'_>) -> Poll<Option<Self::Item>> {
         let this = self.get_mut();
 
         // drain buffered transactions first
