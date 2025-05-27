@@ -93,15 +93,15 @@ where
         let mut set = JoinSet::new();
 
         if self.executors.is_empty() {
-            return Err("no executors".into());
+            warn!("no executors");
         }
 
         if self.collectors.is_empty() {
-            return Err("no collectors".into());
+            warn!("no collectors");
         }
 
         if self.strategies.is_empty() {
-            return Err("no strategies".into());
+            warn!("no strategies");
         }
 
         // Spawn executors in separate threads.
@@ -141,7 +141,7 @@ where
             strategy
                 .sync_state(action_submitter.clone())
                 .await
-                .with_context(||"fail to sync state")?;
+                .with_context(|| "fail to sync state")?;
 
             set.spawn(async move {
                 debug!(name = strategy.name(), "starting strategy... ");
